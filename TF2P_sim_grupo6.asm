@@ -1,7 +1,15 @@
+; You may customize this and other start-up templates; 
+; The location of this template is c:\emu8086\inc\0_com_template.txt
+
 org 100h
 
-; Inicio del programa
-inicio:
+inicio:   
+
+    mov dx, offset msg_inicio
+    mov ah, 9
+    int 21h
+    call nueva_linea
+    
     mov dx, offset msg_num_students
     mov ah, 9
     int 21h
@@ -24,7 +32,7 @@ error_num:
 ingresar_notas:
     mov cl, num_students
     mov si, 0
-    mov byte ptr contador, 0  ; Inicializar contador
+    mov byte ptr contador, 0
     mov word ptr suma, 0
     mov nota_max, 0
     mov nota_min, 20
@@ -34,7 +42,7 @@ bucle_estudiantes:
     mov ah, 9
     int 21h
     mov al, contador
-    inc al                    ; Numero del estudiante (contador + 1)
+    inc al
     call imprimir_num_estudiante
     mov dx, offset msg_colon
     mov ah, 9
@@ -58,10 +66,10 @@ no_max:
     mov nota_min, bl
 no_min:
     inc si
-    inc contador              ; Incrementar contador
+    inc contador
     dec cl
     jnz bucle_estudiantes
-    jmp calcular_resultados
+    jmp mostrar_menu
 
 error_nota:
     mov dx, offset msg_error_nota
@@ -70,46 +78,62 @@ error_nota:
     call nueva_linea
     jmp leer_nota
 
-calcular_resultados:
+mostrar_menu:
     call nueva_linea
+    mov dx, offset msg_menu
+    mov ah, 9
+    int 21h
+    mov ah, 1
+    int 21h           
+    sub al, '0'        
+    cmp al, 1
+    je opcion_estadisticas
+    cmp al, 2
+    je opcion_mostrar_notas
+    cmp al, 3
+    je salir
+    mov dx, offset msg_error_opcion
+    mov ah, 9
+    int 21h
+    call nueva_linea
+    jmp mostrar_menu
 
-    ; Mostrar promedio
+opcion_estadisticas:
+    call nueva_linea
     mov dx, offset msg_promedio
     mov ah, 9
     int 21h
     mov ax, suma
     mov bl, num_students
-    xor dx, dx         ; Limpiar dx para division de 16 bits
-    div bl             ; al = cociente, ah = residuo
+    xor dx, dx
+    div bl
     mov cociente, al
     mov residuo, ah
     mov al, cociente
-    call imprimir_dos_digitos  ; Imprimir parte entera
+    call imprimir_dos_digitos
     mov dl, '.'
     mov ah, 2
     int 21h
-    ; Calcular decimal
     mov al, residuo
-    mov ah, 0          ; Limpiar ah
+    mov ah, 0
     mov bl, 10
-    mul bl             ; residuo * 10
-    div num_students   ; (residuo * 10) / num_students
+    mul bl
+    div num_students
     mov bl, al
-    cmp bl, 10         ; Evitar valores mayores a 9
-    jae decimal_cero   ; Etiqueta corregida
+    cmp bl, 10
+    jae decimal_cero
     add bl, '0'
     mov dl, bl
     mov ah, 2
     int 21h
     jmp fin_decimal
-decimal_cero:          ; Etiqueta corregida
+decimal_cero:
     mov dl, '0'
     mov ah, 2
     int 21h
 fin_decimal:
     call nueva_linea
 
-    ; Mostrar nota maxima
     mov dx, offset msg_max
     mov ah, 9
     int 21h
@@ -117,58 +141,83 @@ fin_decimal:
     call imprimir_dos_digitos
     call nueva_linea
 
-    ; Mostrar nota minima
     mov dx, offset msg_min
     mov ah, 9
     int 21h
     mov al, nota_min
     call imprimir_dos_digitos
     call nueva_linea
+    jmp mostrar_menu
 
-    ; Terminar programa
+opcion_mostrar_notas:
+    call nueva_linea
+    mov dx, offset msg_lista_notas
+    mov ah, 9
+    int 21h
+    mov cl, num_students
+    mov si, 0
+    mov byte ptr contador, 0
+
+bucle_mostrar_notas:
+    mov dx, offset msg_estudiantes
+    mov ah, 9
+    int 21h
+    mov al, contador
+    inc al
+    call imprimir_num_estudiante
+    mov dx, offset msg_colon
+    mov ah, 9
+    int 21h
+    mov al, notas[si]
+    call imprimir_dos_digitos
+    call nueva_linea
+    inc si
+    inc contador
+    dec cl
+    jnz bucle_mostrar_notas
+    jmp mostrar_menu
+
+salir:
     mov ah, 4Ch
     int 21h
 
-; Procedimiento para leer un numero de dos digitos
 leer_numero PROC
     mov ah, 1
-    int 21h            ; Leer primer digito
+    int 21h
     sub al, '0'
     mov bl, al
     mov ah, 1
-    int 21h            ; Leer segundo digito
+    int 21h
     sub al, '0'
     mov bh, al
     mov al, bl
     mov bl, 10
-    mul bl             ; Primer digito * 10
-    add al, bh         ; Sumar segundo digito
+    mul bl
+    add al, bh
     ret
 leer_numero ENDP
 
-; Procedimiento para imprimir un numero en dos digitos
 imprimir_dos_digitos PROC
-    mov ah, 0          ; Limpiar ah antes de la division
+    mov ah, 0
     mov bl, 10
-    div bl             ; al = cociente, ah = residuo
-    add al, '0'        ; Convertir decenas a ASCII
-    add ah, '0'        ; Convertir unidades a ASCII
-    push ax            ; Guardar ax
+    div bl
+    add al, '0'
+    add ah, '0'
+    push ax
     mov dl, al
     mov ah, 2
-    int 21h            ; Imprimir decenas
+    int 21h
     pop ax
     mov dl, ah
     mov ah, 2
-    int 21h            ; Imprimir unidades
+    int 21h
     ret
 imprimir_dos_digitos ENDP
 
-; Procedimiento para imprimir numero de estudiante (1-10) - Mejorado
 imprimir_num_estudiante PROC
     cmp al, 10
     je mostrar_10
-    add al, '0'        ; Convertir a caracter (1-9)
+    add al, '0'
     mov dl, al
     mov ah, 2
     int 21h
@@ -178,11 +227,10 @@ mostrar_10:
     mov ah, 2
     int 21h
     mov dl, '0'
-    int 21h            ; Imprimir "10"
+    int 21h
     ret
 imprimir_num_estudiante ENDP
 
-; Procedimiento para nueva linea
 nueva_linea PROC
     mov dl, 0Dh
     mov ah, 2
@@ -192,20 +240,24 @@ nueva_linea PROC
     ret
 nueva_linea ENDP
 
-; Seccion de datos
 num_students db 0
-contador db 0         ; Nueva variable para el contador
+contador db 0
 notas db 10 dup(0)
 suma dw 0
 nota_max db 0
 nota_min db 20
 cociente db 0
-residuo db 0
+residuo db 0  
+msg_inicio db 13,10, "======== Bienvenidos al Sistema de Ingreso y calculo de notas ======== $"
 msg_num_students db 13,10, "Ingrese el numero de estudiantes (1-10): $"
-msg_grade db 13,10, "Ingrese la nota del estudiante $"
+msg_grade db 13,10, "Ingrese la nota del estudiante $" 
+msg_estudiantes db "Estudiante $"
 msg_colon db ": $"
 msg_error_num db 13,10, "El numero debe estar entre 1-10$"
 msg_error_nota db 13,10, "La nota debe estar entre 0 y 20$"
 msg_promedio db "Promedio: $"
 msg_max db "Nota mas alta: $"
 msg_min db "Nota mas baja: $"
+msg_menu db 13,10, "Menu:", 13,10, "1. Mostrar estadisticas", 13,10, "2. Mostrar notas", 13,10, "3. Salir", 13,10, "Seleccione una opcion (1-3): $"
+msg_error_opcion db 13,10, "Opcion invalida, seleccione 1, 2 o 3$"
+msg_lista_notas db 13,10, "Lista de notas:", 13,10, "$"
