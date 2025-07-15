@@ -24,6 +24,7 @@ error_num:
 ingresar_notas:
     mov cl, num_students
     mov si, 0
+    mov byte ptr contador, 0  ; Inicializar contador
     mov word ptr suma, 0
     mov nota_max, 0
     mov nota_min, 20
@@ -32,8 +33,8 @@ bucle_estudiantes:
     mov dx, offset msg_grade
     mov ah, 9
     int 21h
-    mov ax, si
-    inc al             ; Número del estudiante (si + 1) 
+    mov al, contador
+    inc al                    ; Número del estudiante (contador + 1)
     call imprimir_num_estudiante
     mov dx, offset msg_colon
     mov ah, 9
@@ -57,6 +58,7 @@ no_max:
     mov nota_min, bl
 no_min:
     inc si
+    inc contador              ; Incrementar contador
     dec cl
     jnz bucle_estudiantes
     jmp calcular_resultados
@@ -94,13 +96,13 @@ calcular_resultados:
     div num_students   ; (residuo * 10) / num_students
     mov bl, al
     cmp bl, 10         ; Evitar valores mayores a 9
-    jae decimal_cero
+    jae decimal_cero   ; Etiqueta corregida
     add bl, '0'
     mov dl, bl
     mov ah, 2
     int 21h
     jmp fin_decimal
-decimal_cero:
+decimal_cero:          ; Etiqueta corregida
     mov dl, '0'
     mov ah, 2
     int 21h
@@ -131,11 +133,11 @@ fin_decimal:
 leer_numero PROC
     mov ah, 1
     int 21h            ; Leer primer dígito
-    sub al, 30h
+    sub al, '0'
     mov bl, al
     mov ah, 1
     int 21h            ; Leer segundo dígito
-    sub al, 30h
+    sub al, '0'
     mov bh, al
     mov al, bl
     mov bl, 10
@@ -162,19 +164,18 @@ imprimir_dos_digitos PROC
     ret
 imprimir_dos_digitos ENDP
 
-; Procedimiento para imprimir número de estudiante (1-10)
+; Procedimiento para imprimir número de estudiante (1-10) - Mejorado
 imprimir_num_estudiante PROC
     cmp al, 10
-    je imprimir_10
-    mov dl, ' '
-    mov ah, 2
-    int 21h            ; Espacio para 1-9
+    je mostrar_10
+    add al, '0'        ; Convertir a carácter (1-9)
     mov dl, al
-    add dl, '0'
-    int 21h            ; Imprimir dígito
+    mov ah, 2
+    int 21h
     ret
-imprimir_10:
+mostrar_10:
     mov dl, '1'
+    mov ah, 2
     int 21h
     mov dl, '0'
     int 21h            ; Imprimir "10"
@@ -193,6 +194,7 @@ nueva_linea ENDP
 
 ; Sección de datos
 num_students db 0
+contador db 0         ; Nueva variable para el contador
 notas db 10 dup(0)
 suma dw 0
 nota_max db 0
