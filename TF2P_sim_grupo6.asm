@@ -1,3 +1,6 @@
+; You may customize this and other start-up templates; 
+; The location of this template is c:\emu8086\inc\0_com_template.txt
+
 org 100h
 
 inicio:
@@ -15,7 +18,6 @@ inicio:
     cmp bl, 10
     ja error_num
     mov num_students, bl
-    ; Reset variables for new run
     mov si, 0
     mov cx, 10
 reset_notas:
