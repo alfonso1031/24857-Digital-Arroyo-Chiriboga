@@ -1,15 +1,10 @@
-; You may customize this and other start-up templates; 
-; The location of this template is c:\emu8086\inc\0_com_template.txt
-
 org 100h
 
-inicio:   
-
+inicio:
     mov dx, offset msg_inicio
     mov ah, 9
     int 21h
     call nueva_linea
-    
     mov dx, offset msg_num_students
     mov ah, 9
     int 21h
@@ -20,6 +15,17 @@ inicio:
     cmp bl, 10
     ja error_num
     mov num_students, bl
+    ; Reset variables for new run
+    mov si, 0
+    mov cx, 10
+reset_notas:
+    mov notas[si], 0
+    inc si
+    loop reset_notas
+    mov word ptr suma, 0
+    mov nota_max, 0
+    mov nota_min, 20
+    mov byte ptr contador, 0
     jmp ingresar_notas
 
 error_num:
@@ -33,9 +39,6 @@ ingresar_notas:
     mov cl, num_students
     mov si, 0
     mov byte ptr contador, 0
-    mov word ptr suma, 0
-    mov nota_max, 0
-    mov nota_min, 20
 
 bucle_estudiantes:
     mov dx, offset msg_grade
@@ -84,13 +87,15 @@ mostrar_menu:
     mov ah, 9
     int 21h
     mov ah, 1
-    int 21h           
-    sub al, '0'        
+    int 21h
+    sub al, '0'
     cmp al, 1
     je opcion_estadisticas
     cmp al, 2
     je opcion_mostrar_notas
     cmp al, 3
+    je reiniciar
+    cmp al, 4
     je salir
     mov dx, offset msg_error_opcion
     mov ah, 9
@@ -133,14 +138,12 @@ decimal_cero:
     int 21h
 fin_decimal:
     call nueva_linea
-
     mov dx, offset msg_max
     mov ah, 9
     int 21h
     mov al, nota_max
     call imprimir_dos_digitos
     call nueva_linea
-
     mov dx, offset msg_min
     mov ah, 9
     int 21h
@@ -176,6 +179,9 @@ bucle_mostrar_notas:
     dec cl
     jnz bucle_mostrar_notas
     jmp mostrar_menu
+
+reiniciar:
+    jmp inicio
 
 salir:
     mov ah, 4Ch
@@ -247,10 +253,10 @@ suma dw 0
 nota_max db 0
 nota_min db 20
 cociente db 0
-residuo db 0  
+residuo db 0
 msg_inicio db 13,10, "======== Bienvenidos al Sistema de Ingreso y calculo de notas ======== $"
 msg_num_students db 13,10, "Ingrese el numero de estudiantes (1-10): $"
-msg_grade db 13,10, "Ingrese la nota del estudiante $" 
+msg_grade db 13,10, "Ingrese la nota del estudiante $"
 msg_estudiantes db "Estudiante $"
 msg_colon db ": $"
 msg_error_num db 13,10, "El numero debe estar entre 1-10$"
@@ -258,6 +264,6 @@ msg_error_nota db 13,10, "La nota debe estar entre 0 y 20$"
 msg_promedio db "Promedio: $"
 msg_max db "Nota mas alta: $"
 msg_min db "Nota mas baja: $"
-msg_menu db 13,10, "Menu:", 13,10, "1. Mostrar estadisticas", 13,10, "2. Mostrar notas", 13,10, "3. Salir", 13,10, "Seleccione una opcion (1-3): $"
-msg_error_opcion db 13,10, "Opcion invalida, seleccione 1, 2 o 3$"
+msg_menu db 13,10, "Menu:", 13,10, "1. Mostrar estadisticas", 13,10, "2. Mostrar notas", 13,10, "3. Reiniciar", 13,10, "4. Salir", 13,10, "Seleccione una opcion (1-4): $"
+msg_error_opcion db 13,10, "Opcion invalida, seleccione 1, 2, 3 o 4$"
 msg_lista_notas db 13,10, "Lista de notas:", 13,10, "$"
